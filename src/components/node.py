@@ -1,4 +1,8 @@
-
+## Node class definition and methods
+# A Node is an object that represents a node in an electrical circuit. It has an id, position, 
+# a list of component ids, and the id of the branch it belongs to. The Node class has methods 
+# to change the branch, add a component id, remove a component id, and change the position of 
+# the node.
 
 
 
