@@ -4,19 +4,16 @@
 # displaying the list of components and branches in the circuit. The main window is created using
 # the PyQt5 library.
 
+import sys
+import os
+
 # Add the parent directory to the sys.path so that the modules in the parent directory can be
 # imported.
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-
-import sys
-import os
-
 from PyQt5.QtWidgets import QApplication
 
-
 from main_window import MainWindow
-
 
 def main():
     app = QApplication(sys.argv)

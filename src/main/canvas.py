@@ -177,6 +177,8 @@ class Canvas(QWidget):
 
             # Add the component to the list of components
             self.components.append(component)
+            
+            
 
             # If a new branch is being created, create a new branch with an id that is one more
             # than the last branch id contains the new component id. Add the branch to the list 
@@ -187,6 +189,9 @@ class Canvas(QWidget):
                 self.branches.append(branch)
                 self.branch_selection_id = branch_id
                 self.main_window.update_branch_list([br.id for br in self.branches])
+                
+            # Add the new component id to the list of component ids in the branch
+            branch_by_id(self.branches, component.branch_id).component_ids.append(component.id)
             
             # If the end position is snapped to a node, set the other branch id to the node's 
             # branch id.     
@@ -217,46 +222,39 @@ class Canvas(QWidget):
         branch1_length = len(branch_by_id(self.branches, branch_id_1).component_ids)
         branch2_length = len(branch_by_id(self.branches, branch_id_2).component_ids)
         
-        # Remove the branch with the smaller number of components and change the branch id of
-        # the components and nodes that belong to the removed branch to the other branch id.
+        branch_to_remove = None
+        branch_to_keep = None
+        
         if branch1_length > branch2_length:
-            self.branches.remove(branch_by_id(self.branches, branch_id_2))
-            for component in self.components:
-                if component.branch_id == branch_id_2:
-                    component.change_branch(branch_id_1)
-            for node in self.nodes:
-                if node.branch_id == branch_id_2:
-                    node.change_branch(branch_id_1)
+            branch_to_remove = branch_id_2
+            branch_to_keep = branch_id_1
+            
         elif branch1_length < branch2_length:
-            self.branches.remove(branch_by_id(self.branches, branch_id_1))
-            for component in self.components:
-                if component.branch_id == branch_id_1:
-                    component.change_branch(branch_id_2)
-            for node in self.nodes:
-                if node.branch_id == branch_id_1:
-                    node.change_branch(branch_id_2)
-                    
-        # If the number of components in the branches is the same, remove the branch with the
-        # larger id and change the branch id of the components and nodes that belong to the
-        # removed branch to the other branch id.
-        else:
+            branch_to_remove = branch_id_1
+            branch_to_keep = branch_id_2
+            
+        elif branch1_length == branch2_length:
             if branch_id_1 < branch_id_2:
-                self.branches.remove(branch_by_id(self.branches, branch_id_2))
-                for component in self.components:
-                    if component.branch_id == branch_id_2:
-                        component.change_branch(branch_id_1)
-                for node in self.nodes:
-                    if node.branch_id == branch_id_2:
-                        node.change_branch(branch_id_1)
-            else:
-                self.branches.remove(branch_by_id(self.branches, branch_id_1))
-                for component in self.components:
-                    if component.branch_id == branch_id_1:
-                        component.change_branch(branch_id_2)
-                for node in self.nodes:
-                    if node.branch_id == branch_id_1:
-                        node.change_branch(branch_id_2)
-
+                branch_to_remove = branch_id_2
+                branch_to_keep = branch_id_1
+            elif branch_id_1 > branch_id_2:
+                branch_to_remove = branch_id_1
+                branch_to_keep = branch_id_2
+                        
+        for branch in self.branches:
+            if branch.id == branch_to_keep:
+                branch.component_ids.append([comp.id for comp in self.components if comp.branch_id == branch_to_remove])    
+        
+        for component in self.components:
+            if component.branch_id == branch_to_remove:
+                component.change_branch(branch_to_keep)
+                
+        for node in self.nodes:
+            if node.branch_id == branch_to_remove:
+                node.change_branch(branch_to_keep)
+            
+        self.branches.remove(branch_by_id(self.branches, branch_to_remove))
+    
     # Finds the nearest node to a given position within the snap distance
     def find_nearest_node(self, pos):
         nearest_node = None
