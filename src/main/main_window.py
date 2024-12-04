@@ -1,4 +1,3 @@
-
 from PyQt5.QtWidgets import QMainWindow, QToolBar, QAction, QDockWidget, QListWidget
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
@@ -73,14 +72,16 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.canvas)
 
 
-    def add_component_to_list(self, component):
-        self.component_list.addItem(str(component.id))
+    def update_comp_list(self, component_ids):
+        self.component_list.clear()
+        self.component_list.addItems([str(comp_id) for comp_id in component_ids])
 
-    def add_branch_to_list(self, branch):
-        self.branch_list.addItem(str(branch.id))
+    def update_branch_list(self, branch_ids):
+        self.branch_list.clear()
+        self.branch_list.addItems([str(branch_id) for branch_id in branch_ids])
 
 
 
 
 
-        
+

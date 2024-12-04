@@ -4,7 +4,7 @@ from PyQt5.QtGui import QPainter, QPen, QColor
 from PyQt5.QtCore import Qt, QPoint
 
 from components.component import add_component, add_node_id
-from analysis.branch import create_branch
+from analysis.branch import create_branch, branch_by_id
 from utils import get_last_component_id, get_last_branch_id
 from components.node import add_node, add_component_id
 
@@ -30,7 +30,8 @@ class Canvas(QWidget):
         self.snap_distance = 20
         
         self.branches = []
-        self.branch_selection = None
+        self.branch_selection_id = None
+        self.other_branch_id = None
 
         self.nodes = []
         self.new_branch = True
@@ -70,10 +71,12 @@ class Canvas(QWidget):
         if event.button() == Qt.LeftButton:
             self.nearest_node = self.find_nearest_node(event.pos())
             if self.nearest_node:
+                self.branch_selection_id = self.nearest_node.branch_id
                 self.start_pos = self.nearest_node.pos
                 self.new_branch = False
             else:
                 self.start_pos = event.pos()
+                self.branch_selection_id = get_last_branch_id(self.branches) + 1
             self.end_pos = event.pos()
             self.update()
 
@@ -90,49 +93,93 @@ class Canvas(QWidget):
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.end_pos = event.pos()
-            nearest_node = self.find_nearest_node(self.end_pos)
-            
-            if nearest_node:
-                self.end_pos = nearest_node.pos
-
-
+            self.nearest_node = self.find_nearest_node(self.end_pos)
+            self.other_branch_id = None
+            if self.nearest_node:
+                self.end_pos = self.nearest_node.pos
+                if self.branch_selection_id != self.nearest_node.branch_id:
+                    self.end_branch = True
+                
             comp_id = get_last_component_id(self.components) + 1
-            component = add_component(self.component_selection, comp_id, self.start_pos, self.end_pos)
+            component = add_component(self.component_selection, comp_id, self.start_pos, self.end_pos, branch_id=self.branch_selection_id)
             
             if self.new_branch:
                 node_id = get_last_component_id(self.nodes) + 1
-                node = add_node(node_id, self.start_pos)
+                node = add_node(node_id, self.start_pos, self.branch_selection_id)
                 add_component_id(node, comp_id)
                 self.nodes.append(node)
                 add_node_id(component, node_id)
 
             if not self.end_branch:
                 node_id = get_last_component_id(self.nodes) + 1
-                node = add_node(node_id, self.end_pos)
+                node = add_node(node_id, self.end_pos, self.branch_selection_id)
                 add_component_id(node, comp_id)
                 self.nodes.append(node)
                 add_node_id(component, node_id)
-                
-                
 
             self.components.append(component)
 
-            if not self.branch_selection:
+            if self.new_branch:
                 branch_id = get_last_branch_id(self.branches) + 1
-                new_branch = create_branch(branch_id, component)
-                self.branches.append(new_branch)
+                branch = create_branch(branch_id, comp_id)
+                self.branches.append(branch)
+                self.branch_selection_id = branch_id
+                self.main_window.update_branch_list([br.id for br in self.branches])
+                
+            if self.end_branch:
+                self.other_branch_id = self.nearest_node.branch_id
+                
+                if self.branch_selection_id != self.other_branch_id:
+                    self.merge_branches(self.branch_selection_id, self.other_branch_id)
 
-            if self.main_window:
-                self.main_window.add_component_to_list(component)
-                self.main_window.add_branch_to_list(new_branch)
-
+            self.main_window.update_branch_list([br.id for br in self.branches])
+            self.main_window.update_comp_list([comp.id for comp in self.components])
+   
+            
             self.start_pos = None
             self.end_pos = None
             self.end_branch = False
             self.nearest_node = None
+            self.new_branch = True
             self.update()
 
+    def merge_branches(self, branch_id_1, branch_id_2):
+        branch1_length = len(branch_by_id(self.branches, branch_id_1).component_ids)
+        branch2_length = len(branch_by_id(self.branches, branch_id_2).component_ids)
         
+        if branch1_length > branch2_length:
+            self.branches.remove(branch_by_id(self.branches, branch_id_2))
+            for component in self.components:
+                if component.branch_id == branch_id_2:
+                    component.change_branch(branch_id_1)
+            for node in self.nodes:
+                if node.branch_id == branch_id_2:
+                    node.change_branch(branch_id_1)
+        elif branch1_length < branch2_length:
+            self.branches.remove(branch_by_id(self.branches, branch_id_1))
+            for component in self.components:
+                if component.branch_id == branch_id_1:
+                    component.change_branch(branch_id_2)
+            for node in self.nodes:
+                if node.branch_id == branch_id_1:
+                    node.change_branch(branch_id_2)
+        else:
+            if branch_id_1 < branch_id_2:
+                self.branches.remove(branch_by_id(self.branches, branch_id_2))
+                for component in self.components:
+                    if component.branch_id == branch_id_2:
+                        component.change_branch(branch_id_1)
+                for node in self.nodes:
+                    if node.branch_id == branch_id_2:
+                        node.change_branch(branch_id_1)
+            else:
+                self.branches.remove(branch_by_id(self.branches, branch_id_1))
+                for component in self.components:
+                    if component.branch_id == branch_id_1:
+                        component.change_branch(branch_id_2)
+                for node in self.nodes:
+                    if node.branch_id == branch_id_1:
+                        node.change_branch(branch_id_2)
 
     def find_nearest_node(self, pos):
         nearest_node = None

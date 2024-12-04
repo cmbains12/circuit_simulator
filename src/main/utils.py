@@ -1,6 +1,9 @@
 
 from PyQt5.QtWidgets import QDesktopWidget
 
+from analysis.branch import branch_by_id, change_branch_id
+from components.component import component_by_id
+
 def get_display_resolution(self):
         screen = QDesktopWidget().screenGeometry()
         self.display_width = screen.width()
@@ -17,3 +20,4 @@ def get_last_branch_id(branches):
                 return 0
         else:
                 return branches[-1].id
+        
