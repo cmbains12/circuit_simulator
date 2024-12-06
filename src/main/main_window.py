@@ -73,17 +73,17 @@ class MainWindow(QMainWindow):
         self.component_list = QListWidget()
         self.component_list.setFixedWidth(300)
 
-        # Create a list widget to display the list of branches
-        self.branch_list = QListWidget()
-        self.branch_list.setFixedWidth(300)
+        # Create a list widget to display the list of nets
+        self.net_list = QListWidget()
+        self.net_list.setFixedWidth(300)
 
         # Create a dock widget to display the list of components
         dock_widget_1 = QDockWidget("Components", self)
         dock_widget_1.setWidget(self.component_list)
 
-        # Create a dock widget to display the list of branches
-        dock_widget_2 = QDockWidget("Branches", self)
-        dock_widget_2.setWidget(self.branch_list)
+        # Create a dock widget to display the list of nets
+        dock_widget_2 = QDockWidget("Nets", self)
+        dock_widget_2.setWidget(self.net_list)
         
         # Add the dock widgets to the right side of the main window
         self.addDockWidget(Qt.RightDockWidgetArea, dock_widget_1)
@@ -108,12 +108,12 @@ class MainWindow(QMainWindow):
         # Add the component ids to the list widget
         self.component_list.addItems([str(comp_id) for comp_id in component_ids])
 
-    # Update the list of branches in the right dock widget
-    def update_branch_list(self, branch_ids):
+    # Update the list of nets in the right dock widget
+    def update_net_list(self, net_ids):
         # Clear the list widget
-        self.branch_list.clear()
+        self.net_list.clear()
         # Add the branch ids to the list widget
-        self.branch_list.addItems([str(branch_id) for branch_id in branch_ids])
+        self.net_list.addItems([str(branch_id) for branch_id in net_ids])
 
 
 

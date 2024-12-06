@@ -13,48 +13,48 @@
 
 
 class Component:
-    def __init__(self, id, start_pos, end_pos, node_ids=[], branch_id=None):
+    def __init__(self, id, start_pos, end_pos, node_ids=[], net_id=None):
         self.id = id
         self.start_pos = start_pos
         self.end_pos = end_pos
         self.component_type = None
         self.node_ids = node_ids
-        self.branch_id = branch_id
+        self.net_id = net_id
     
     # Changes the branch id of the component to the new branch id   
-    def change_branch(self, new_branch_id):
-        self.branch_id = new_branch_id
+    def change_net(self, new_net_id):
+        self.net_id = new_net_id
 
 
     
 
 class Conductor(Component):
-    def __init__(self, id, start_pos, end_pos, node_ids=[], branch_id=None):
-        super().__init__(id, start_pos, end_pos, node_ids, branch_id)
+    def __init__(self, id, start_pos, end_pos, node_ids=[], net_id=None):
+        super().__init__(id, start_pos, end_pos, node_ids, net_id)
 
 
 class Resistor(Component):
-    def __init__(self, id, start_pos, end_pos, node_ids=[], branch_id=None):
-        super().__init__(id, start_pos, end_pos, node_ids, branch_id)
+    def __init__(self, id, start_pos, end_pos, node_ids=[], net_id=None):
+        super().__init__(id, start_pos, end_pos, node_ids, net_id)
 
     
 class Supply(Component):
-    def __init__(self, id, start_pos, end_pos, node_ids=[], branch_id=None):
-        super().__init__(id, start_pos, end_pos, node_ids, branch_id)
+    def __init__(self, id, start_pos, end_pos, node_ids=[], net_id=None):
+        super().__init__(id, start_pos, end_pos, node_ids, net_id)
 
 # Creates a new component with the given id, start position, end position, node ids, and 
-# branch id. The component type is used to determine which subclass of the Component class
+# net id. The component type is used to determine which subclass of the Component class
 # to create.
-def add_component(component_type, id, start_pos, end_pos, node_ids=[], branch_id=None):
+def add_component(component_type, id, start_pos, end_pos, node_ids=[], net_id=None):
 
     if component_type == 'Conductor':
-        return Conductor(id, start_pos, end_pos, node_ids, branch_id)
+        return Conductor(id, start_pos, end_pos, node_ids, net_id)
     elif component_type == 'Resistor':
-        return Resistor(id, start_pos, end_pos, node_ids, branch_id)
+        return Resistor(id, start_pos, end_pos, node_ids, net_id)
     elif component_type == 'Supply':
-        return Supply(id, start_pos, end_pos, node_ids, branch_id)
+        return Supply(id, start_pos, end_pos, node_ids, net_id)
     elif component_type == None:
-        return Component(id, start_pos, end_pos, node_ids, branch_id)
+        return Component(id, start_pos, end_pos, node_ids, net_id)
 
 def add_node_id(component, node_id):
     component.node_ids.append(node_id)

@@ -2,24 +2,21 @@
 # The Canvas class is a QWidget that is used to draw the electrical circuit. It has a list of
 # components, a component selection, a pen color, a pen width, the current position of the mouse,
 # the start and end positions of the component being drawn, the nearest node to the mouse cursor,
-# a snap distance, a list of branches, the id of the selected branch, the id of the other branch
-# that the component is to be connected to, a list of nodes, and flags to indicate if a new branch is
+# a snap distance, a list of nets, the id of the selected net, the id of the other net
+# that the component is to be connected to, a list of nodes, and flags to indicate if a new net is
 # being created or if the component is connecting to an existing node. The Canvas class has
 # methods to draw the components, nodes, handle mouse events, find the nearest node
-# to the mouse cursor, and merge branches.
+# to the mouse cursor, and merge nets.
 
 
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import QPainter, QPen, QColor
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import Qt
 
 from components.component import add_component, add_node_id
-from analysis.branch import create_branch, branch_by_id
-from utils import get_last_component_id, get_last_branch_id
+from analysis.net import create_net, net_by_id
+from utils import get_last_component_id, get_last_net_id
 from components.node import add_node, add_component_id
-
-
-
 
 class Canvas(QWidget):
     def __init__(self, parent=None, main_window=None):
@@ -48,18 +45,26 @@ class Canvas(QWidget):
         # Set the snap distance for snapping to nodes
         self.snap_distance = 20
         
-        # Initialize the list of branches and the branch selection id and other branch id
-        self.branches = []
-        self.branch_selection_id = None
-        self.other_branch_id = None
+        # Initialize the list of nets and the net selection id and other net id
+        self.nets = []
+        self.net_selection_id = None
+        self.other_net_id = None
+        
+        # Initialize a variable that stores the draw/select mode
+        self.draw_mode = True
+        
+        # Initialize the id of the node or component that is selected by the cursor
+        self.selected_type = None
+        self.selected_id = None
+        
 
         # Initialize the list of nodes
         self.nodes = []
         
-        # Flags to indicate if a new branch is being created or if the component is connecting 
+        # Flags to indicate if a new net is being created or if the component is connecting 
         # to an existing node
-        self.new_branch = True
-        self.end_branch = False
+        self.new_net = True
+        self.end_net = False
 
     # Draws the components and nodes on the canvas
     def paintEvent(self, event):
@@ -95,27 +100,30 @@ class Canvas(QWidget):
     # Handles mouse press events
     def mousePressEvent(self, event):
         # Left mouse button press
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton and self.draw_mode:
             # Find the nearest node to the mouse cursor and snap to it
             self.nearest_node = self.find_nearest_node(event.pos())
             # If a node is snapped to, set the start position to the node position,
-            # set the branch selection id to the node's branch id, 
-            # and set new branch flag to False
+            # set the net selection id to the node's net id, 
+            # and set new net flag to False
             if self.nearest_node:
-                self.branch_selection_id = self.nearest_node.branch_id
+                self.net_selection_id = self.nearest_node.net_id
                 self.start_pos = self.nearest_node.pos
-                self.new_branch = False
+                self.new_net = False
             # If no node is snapped to, set the start position to the mouse cursor position,
-            # set the branch selection id to the last branch id + 1, 
-            # and keep the new branch flag as True
+            # set the net selection id to the last net id + 1, 
+            # and keep the new net flag as True
             else:
                 self.start_pos = event.pos()
-                self.branch_selection_id = get_last_branch_id(self.branches) + 1
+                self.net_selection_id = get_last_net_id(self.nets) + 1
                 
             # To preview the component being drawn, set the end position to the mouse cursor position
             self.end_pos = event.pos()
             # Update the canvas
             self.update()
+            
+        elif event.button() == Qt.LeftButton and not self.draw_mode:
+            pass
 
     # Handles mouse move events
     def mouseMoveEvent(self, event):
@@ -137,40 +145,40 @@ class Canvas(QWidget):
         # If the left mouse button is released
         if event.button() == Qt.LeftButton:
             # If the end position is snapped to a node, set the end position to the node position
-            # and set the end branch flag to True if the branch selection id is not the same as 
-            # the node's branch id. If the end position is not snapped to a node, set the end 
+            # and set the end net flag to True if the net selection id is not the same as 
+            # the node's net id. If the end position is not snapped to a node, set the end 
             # position to the mouse cursor position.
             
             self.nearest_node = self.find_nearest_node(self.end_pos)
-            self.other_branch_id = None
+            self.other_net_id = None
             if self.nearest_node:
                 self.end_pos = self.nearest_node.pos
-                if self.branch_selection_id != self.nearest_node.branch_id:
-                    self.end_branch = True
+                if self.net_selection_id != self.nearest_node.net_id:
+                    self.end_net = True
             else:
                 self.end_pos = event.pos()
             
             # Create a new component with an id that is one more than the last component id,
-            # the start and end positions, the branch selection id, and the other branch id if
+            # the start and end positions, the net selection id, and the other net id if
             # the end position is snapped to a node.
             
             comp_id = get_last_component_id(self.components) + 1    
-            component = add_component(self.component_selection, comp_id, self.start_pos, self.end_pos, branch_id=self.branch_selection_id)
+            component = add_component(self.component_selection, comp_id, self.start_pos, self.end_pos, net_id=self.net_selection_id)
             
             # If the start position is not snapped to a node, create a new node with an id that 
-            # is one more than the last node id, the start position, and the branch selection id.
-            if self.new_branch:
+            # is one more than the last node id, the start position, and the net selection id.
+            if self.new_net:
                 node_id = get_last_component_id(self.nodes) + 1
-                node = add_node(node_id, self.start_pos, self.branch_selection_id)
+                node = add_node(node_id, self.start_pos, self.net_selection_id)
                 add_component_id(node, comp_id)
                 self.nodes.append(node)
                 add_node_id(component, node_id)
                 
             # If the end position is not snapped to a node, create a new node with an id that
-            # is one more than the last node id, the end position, and the branch selection id.
-            if not self.end_branch:
+            # is one more than the last node id, the end position, and the net selection id.
+            if not self.end_net:
                 node_id = get_last_component_id(self.nodes) + 1
-                node = add_node(node_id, self.end_pos, self.branch_selection_id)
+                node = add_node(node_id, self.end_pos, self.net_selection_id)
                 add_component_id(node, comp_id)
                 self.nodes.append(node)
                 add_node_id(component, node_id)
@@ -180,80 +188,80 @@ class Canvas(QWidget):
             
             
 
-            # If a new branch is being created, create a new branch with an id that is one more
-            # than the last branch id contains the new component id. Add the branch to the list 
-            # of branches and update the branch list in the main window.            
-            if self.new_branch:
-                branch_id = get_last_branch_id(self.branches) + 1
-                branch = create_branch(branch_id, comp_id)
-                self.branches.append(branch)
-                self.branch_selection_id = branch_id
-                self.main_window.update_branch_list([br.id for br in self.branches])
+            # If a new net is being created, create a new net with an id that is one more
+            # than the last net id contains the new component id. Add the net to the list 
+            # of nets and update the net list in the main window.            
+            if self.new_net:
+                net_id = get_last_net_id(self.nets) + 1
+                net = create_net(net_id, comp_id)
+                self.nets.append(net)
+                self.net_selection_id = net_id
+                self.main_window.update_net_list([net.id for net in self.nets])
                 
-            # Add the new component id to the list of component ids in the branch
-            branch_by_id(self.branches, component.branch_id).component_ids.append(component.id)
+            # Add the new component id to the list of component ids in the net
+            net_by_id(self.nets, component.net_id).component_ids.append(component.id)
             
-            # If the end position is snapped to a node, set the other branch id to the node's 
-            # branch id.     
-            if self.end_branch:
-                self.other_branch_id = self.nearest_node.branch_id
+            # If the end position is snapped to a node, set the other net id to the node's 
+            # net id.     
+            if self.end_net:
+                self.other_net_id = self.nearest_node.net_id
                 
-                # If the branch selection id is not the same as the other branch id, merge the
-                # branches.
+                # If the net selection id is not the same as the other net id, merge the
+                # nets.
                 
-                if self.branch_selection_id != self.other_branch_id:
-                    self.merge_branches(self.branch_selection_id, self.other_branch_id)
+                if self.net_selection_id != self.other_net_id:
+                    self.merge_nets(self.net_selection_id, self.other_net_id)
 
-            # Update the component and branch lists in the main window
-            self.main_window.update_branch_list([br.id for br in self.branches])
+            # Update the component and net lists in the main window
+            self.main_window.update_net_list([net.id for net in self.nets])
             self.main_window.update_comp_list([comp.id for comp in self.components])
    
             # Reset the start and end positions, the nearest node, and the flags
             self.start_pos = None
             self.end_pos = None
-            self.end_branch = False
+            self.end_net = False
             self.nearest_node = None
-            self.new_branch = True
+            self.new_net = True
             self.update()
 
-    # Merges two branches by removing one of the branches and changing the branch id of the
-    # components and nodes that belong to the removed branch to the other branch id.
-    def merge_branches(self, branch_id_1, branch_id_2):
-        branch1_length = len(branch_by_id(self.branches, branch_id_1).component_ids)
-        branch2_length = len(branch_by_id(self.branches, branch_id_2).component_ids)
+    # Merges two nets by removing one of the nets and changing the net id of the
+    # components and nodes that belong to the removed net to the other net id.
+    def merge_nets(self, net_id_1, net_id_2):
+        net1_length = len(net_by_id(self.nets, net_id_1).component_ids)
+        net2_length = len(net_by_id(self.nets, net_id_2).component_ids)
         
-        branch_to_remove = None
-        branch_to_keep = None
+        net_to_remove = None
+        net_to_keep = None
         
-        if branch1_length > branch2_length:
-            branch_to_remove = branch_id_2
-            branch_to_keep = branch_id_1
+        if net1_length > net2_length:
+            net_to_remove = net_id_2
+            net_to_keep = net_id_1
             
-        elif branch1_length < branch2_length:
-            branch_to_remove = branch_id_1
-            branch_to_keep = branch_id_2
+        elif net1_length < net2_length:
+            net_to_remove = net_id_1
+            net_to_keep = net_id_2
             
-        elif branch1_length == branch2_length:
-            if branch_id_1 < branch_id_2:
-                branch_to_remove = branch_id_2
-                branch_to_keep = branch_id_1
-            elif branch_id_1 > branch_id_2:
-                branch_to_remove = branch_id_1
-                branch_to_keep = branch_id_2
+        elif net1_length == net2_length:
+            if net_id_1 < net_id_2:
+                net_to_remove = net_id_2
+                net_to_keep = net_id_1
+            elif net_id_1 > net_id_2:
+                net_to_remove = net_id_1
+                net_to_keep = net_id_2
                         
-        for branch in self.branches:
-            if branch.id == branch_to_keep:
-                branch.component_ids.append([comp.id for comp in self.components if comp.branch_id == branch_to_remove])    
+        for net in self.nets:
+            if net.id == net_to_keep:
+                net.component_ids.append([comp.id for comp in self.components if comp.net_id == net_to_remove])    
         
         for component in self.components:
-            if component.branch_id == branch_to_remove:
-                component.change_branch(branch_to_keep)
+            if component.net_id == net_to_remove:
+                component.change_net(net_to_keep)
                 
         for node in self.nodes:
-            if node.branch_id == branch_to_remove:
-                node.change_branch(branch_to_keep)
+            if node.net_id == net_to_remove:
+                node.change_net(net_to_keep)
             
-        self.branches.remove(branch_by_id(self.branches, branch_to_remove))
+        self.nets.remove(net_by_id(self.nets, net_to_remove))
     
     # Finds the nearest node to a given position within the snap distance
     def find_nearest_node(self, pos):
@@ -279,12 +287,11 @@ class Canvas(QWidget):
                 
         # Return the nearest node
         return nearest_node
-        
 
 
 
-    
 
-        
 
-    
+
+
+

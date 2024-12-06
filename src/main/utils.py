@@ -22,9 +22,9 @@ def get_last_component_id(components):
         return components[-1].id
 
 # Get the last branch id from the list of branches   
-def get_last_branch_id(branches):
-        if len(branches) == 0:
+def get_last_net_id(nets):
+        if len(nets) == 0:
                 return 0
         else:
-                return branches[-1].id
+                return nets[-1].id
         
