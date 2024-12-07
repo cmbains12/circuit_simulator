@@ -39,3 +39,21 @@ def net_by_id(nets, id):
         if net.id == id:
             return net
     return None
+
+def branch_by_id(branches, id):
+    for branch in branches:
+        if branch.id == id:
+            return branch
+    return None
+
+def component_by_id(components, id):
+    for component in components:
+        if component.id == id:
+            return component
+    return None
+
+def node_by_id(nodes, id):
+    for node in nodes:
+        if node.id == id:
+            return node
+    return None

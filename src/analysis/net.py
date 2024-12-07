@@ -6,10 +6,10 @@
 class Net():
     def __init__(self, id, brch_ids, cmp_ids, nd_ids, msh_ids = []):
         self.id = id
-        self.branch_ids = brch_ids
-        self.component_ids = cmp_ids
-        self.node_ids = nd_ids
-        self.mesh_ids = msh_ids
+        self.branch_ids = [brch_ids]
+        self.component_ids = [cmp_ids]
+        self.node_ids = [nd_ids]
+        self.mesh_ids = [msh_ids]
     
     # Returns the list of component ids in the net   
     def get_id(self):

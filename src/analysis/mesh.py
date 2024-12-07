@@ -5,9 +5,9 @@ class Mesh():
     def __init__(self, id, nt_id, brch_ids, cmp_ids, nd_ids):
         self.id = id
         self.net_id = nt_id
-        self.branch_ids = brch_ids
-        self.component_ids = cmp_ids
-        self.node_ids = nd_ids
+        self.branch_ids = [brch_ids]
+        self.component_ids = [cmp_ids]
+        self.node_ids = [nd_ids]
     
     # Returns the list of component ids in the net   
     def get_id(self):

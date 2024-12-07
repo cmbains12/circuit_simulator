@@ -2,13 +2,12 @@
 
 
 class Branch ():
-    def __init__(self, id, nt_id, cmpt_ids, nd_ids, msh_ids = []):
+    def __init__(self, id, nt_id, cmp_ids, nd_ids, msh_ids = []):
         self.id = id
         self.net_id = nt_id
-        self.component_ids = []
-        self.component_ids.append(cmpt_ids)
-        self.node_ids = nd_ids
-        self.mesh_ids = msh_ids
+        self.component_ids = [cmp_ids]
+        self.node_ids = [nd_ids]
+        self.mesh_ids = [msh_ids]
         
     def get_id(self):
         return self.id
@@ -49,8 +48,8 @@ class Branch ():
     def remove_mesh_id(self, msh_id):
         self.mesh_ids.remove(msh_id)
         
-def add_branch(id, nt_id, cmpt_ids, nd_ids, msh_ids=[]):
-    return Branch(id, nt_id, cmpt_ids, nd_ids, msh_ids)
+def add_branch(id, nt_id, cmp_ids, nd_ids, msh_ids=[]):
+    return Branch(id, nt_id, cmp_ids, nd_ids, msh_ids)
 
 
         

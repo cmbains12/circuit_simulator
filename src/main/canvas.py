@@ -17,7 +17,7 @@ from components.component import add_component
 from analysis.net import add_net
 from analysis.mesh import add_mesh
 from analysis.branch import add_branch
-from utils import get_last_component_id, get_last_net_id, net_by_id, get_last_branch_id
+from utils import get_last_component_id, get_last_net_id, net_by_id, get_last_branch_id, branch_by_id, component_by_id, node_by_id
 from components.node import add_node
 
 class Canvas(QWidget):
@@ -128,7 +128,8 @@ class Canvas(QWidget):
                 self.start_pos = self.nearest_node.pos
                 self.new_node_1 = False
                 
-                self.net_selection_id = self.nearest_node.net_id
+                self.net_selection_id = self.nearest_node.get_net_id()
+                self.branch_selection_id = self.nearest_node.get_branch_id()
                 
             # If no node is snapped to, set the start position to the mouse cursor position,
             # set the net selection id to the last net id + 1, 
@@ -177,22 +178,29 @@ class Canvas(QWidget):
             # position to the mouse cursor position.
             self.nearest_node = self.find_nearest_node(self.end_pos)
             net = None
+            branch = None
             if self.nearest_node:
-                
                 self.end_pos = self.nearest_node.pos
                 self.new_node_2 = False
                 self.other_net_id = self.nearest_node.net_id
+                self.other_branch_id = self.nearest_node.get_branch_id()
+                
                 
             else:
                 
                 self.end_pos = event.pos()
+                
+            
             
             if self.new_node_1 and self.new_node_2:
                 self.net_selection_id = get_last_net_id(self.nets) + 1
                 self.branch_selection_id = get_last_branch_id(self.branches) + 1
                 net = add_net(self.net_selection_id, self.branch_selection_id, cmp_ids = [], nd_ids=[])
+                branch = add_branch(self.branch_selection_id, self.net_selection_id, cmp_ids = [], nd_ids = []) 
                 self.nets.append(net)
+                self.branches.append(branch)
                 self.main_window.update_net_list([net.id for net in self.nets])
+                self.main_window.update_branch_list([branch.id for branch in self.branches])
                 # Create a new component with an id that is one more than the last component id,
             
             # the start and end positions, the net selection id, and the other net id if
@@ -200,6 +208,8 @@ class Canvas(QWidget):
             comp_id = get_last_component_id(self.components) + 1    
             component = add_component(self.component_selection, comp_id, self.branch_selection_id, self.net_selection_id, st_pos = self.start_pos, nd_pos = self.end_pos, nd_ids = [])
             
+            branch_by_id(self.branches, self.branch_selection_id).add_component_id(comp_id)
+            net_by_id(self.nets, self.net_selection_id).add_component_id(comp_id)
 
                 
             # If the start position is not snapped to a node, create a new node with an id that 
@@ -211,6 +221,7 @@ class Canvas(QWidget):
                 self.nodes.append(node)
                 component.add_node_id([node_id])
                 net_by_id(self.nets, self.net_selection_id).add_node_id(node_id)
+                branch_by_id(self.branches, self.branch_selection_id).add_node_id(node_id)
                 
             
 
@@ -226,6 +237,7 @@ class Canvas(QWidget):
                 self.nodes.append(node)
                 component.add_node_id(node_id)
                 net_by_id(self.nets, self.net_selection_id).add_node_id(node_id)
+                branch_by_id(self.branches, self.branch_selection_id).add_node_id(node_id)
 
             # Add the component to the list of components
             self.components.append(component)
@@ -235,8 +247,6 @@ class Canvas(QWidget):
             # of nets and update the net list in the main window.            
             
                 
-            # Add the new component id to the list of component ids in the net
-            net_by_id(self.nets, component.net_id).add_component_id(comp_id)
             
             # If the end position is snapped to a node, set the other net id to the node's 
             # net id.     
@@ -247,9 +257,13 @@ class Canvas(QWidget):
                 # nets.
                 if self.net_selection_id != self.other_net_id:
                     self.merge_nets(self.net_selection_id, self.other_net_id)
+                    
+                if self.branch_selection_id != self.other_branch_id:
+                    self.merge_branches(self.branch_selection_id, self.other_branch_id)
 
             # Update the component and net lists in the main window
             self.main_window.update_net_list([net.id for net in self.nets])
+            self.main_window.update_branch_list([branch.id for branch in self.branches])
             self.main_window.update_comp_list([comp.id for comp in self.components])
    
             # Reset the start and end positions, the nearest node, and the flags
@@ -286,9 +300,15 @@ class Canvas(QWidget):
                 net_to_remove = net_id_1
                 net_to_keep = net_id_2
                         
-        for net in self.nets:
-            if net.id == net_to_keep:
-                net.component_ids.append([comp.id for comp in self.components if comp.net_id == net_to_remove])    
+       
+        net_by_id(self.nets, net_to_keep).add_component_id([comp.id for comp in self.components if comp.net_id == net_to_remove])
+        
+        #for component in self.components:
+        #    if component.net_id == net_to_remove:
+        #        component.change_net_id(net_to_keep)
+                
+        
+        #component_by_id(self.components, [id for id in net_by_id(self.nets, net_to_remove).get_component_ids()]).change_net_id(net_to_keep)
         
         for component in self.components:
             if component.net_id == net_to_remove:
@@ -297,8 +317,46 @@ class Canvas(QWidget):
         for node in self.nodes:
             if node.net_id == net_to_remove:
                 node.change_net_id(net_to_keep)
-            
+        
+        #node_by_id(self.nodes, [node_id for node_id in net_by_id(self.nets, net_to_remove).get_node_ids()]).change_net_id(net_to_keep)
+           
         self.nets.remove(net_by_id(self.nets, net_to_remove))
+        
+    def merge_branches(self, branch_id_1, branch_id_2):
+            
+        branch1_length = len(branch_by_id(self.branches, branch_id_1).component_ids)
+        branch2_length = len(branch_by_id(self.branches, branch_id_2).component_ids)
+            
+        branch_to_remove = None
+        branch_to_keep = None
+            
+        if branch1_length > branch2_length:
+                branch_to_remove = branch_id_2
+                branch_to_keep = branch_id_1
+                
+        elif branch1_length < branch2_length:
+                branch_to_remove = branch_id_1
+                branch_to_keep = branch_id_2
+                
+        elif branch1_length == branch2_length:
+            if branch_id_1 < branch_id_2:
+                branch_to_remove = branch_id_2
+                branch_to_keep = branch_id_1
+            elif branch_id_1 > branch_id_2:
+                branch_to_remove = branch_id_1
+                branch_to_keep = branch_id_2
+                            
+        branch_by_id(self.branches, branch_to_keep).add_component_id([comp.id for comp in self.components if comp.branch_id == branch_to_remove])
+            
+        for component in self.components:
+            if component.get_branch_id() == branch_to_remove:
+                component.change_branch_id(branch_to_keep)
+                    
+        for node in self.nodes:
+            if node.get_branch_id() == branch_to_remove:
+                node.change_branch_id(branch_to_keep)
+                
+        self.branches.remove(branch_by_id(self.branches, branch_to_remove))
     
     # Finds the nearest node to a given position within the snap distance
     def find_nearest_node(self, pos):

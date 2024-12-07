@@ -18,10 +18,9 @@ class Component:
         self.branch_id = brch_id
         self.start_pos = st_pos
         self.end_pos = nd_pos
-        self.component_type = None
-        self.node_ids = nd_ids
+        self.node_ids = [nd_ids]
         self.net_id = nt_id
-        self.mesh_ids = msh_ids
+        self.mesh_ids = [msh_ids]
         
     def get_id(self):
         return self.id
@@ -67,6 +66,7 @@ class Component:
         
     def add_node_id(self, nd_id):
         self.node_ids.append(nd_id)
+        
         
 class Conductor(Component):
     def __init__(self, id, brch_id, nt_id, nd_ids, st_pos, nd_pos, msh_ids=None):

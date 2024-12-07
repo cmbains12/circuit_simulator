@@ -7,19 +7,19 @@
 
 
 class Node:
-    def __init__(self, id, brch_ids, nt_id, cmp_ids, pos, msh_ids=None):
+    def __init__(self, id, brch_id, nt_id, cmp_ids, pos, msh_ids=None):
         self.id = id
-        self.branch_ids = brch_ids
+        self.branch_id = brch_id
         self.net_id = nt_id
-        self.component_ids = cmp_ids
+        self.component_ids = [cmp_ids]
         self.pos = pos
-        self.mesh_ids = msh_ids
+        self.mesh_ids = [msh_ids]
         
     def get_id(self):
         return self.id
     
-    def get_branch_ids(self):
-        return self.branch_ids
+    def get_branch_id(self):
+        return self.branch_id
     
     def get_net_id(self):
         return self.net_id
