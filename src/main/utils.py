@@ -28,3 +28,8 @@ def get_last_net_id(nets):
         else:
                 return nets[-1].id
         
+def net_by_id(nets, id):
+    for net in nets:
+        if net.id == id:
+            return net
+    return None

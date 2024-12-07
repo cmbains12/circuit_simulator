@@ -13,10 +13,12 @@ from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import QPainter, QPen, QColor
 from PyQt5.QtCore import Qt
 
-from components.component import add_component, add_node_id
-from analysis.net import create_net, net_by_id
-from utils import get_last_component_id, get_last_net_id
-from components.node import add_node, add_component_id
+from components.component import add_component
+from analysis.net import add_net
+from analysis.mesh import add_mesh
+from analysis.branch import add_branch
+from utils import get_last_component_id, get_last_net_id, net_by_id
+from components.node import add_node
 
 class Canvas(QWidget):
     def __init__(self, parent=None, main_window=None):
@@ -31,6 +33,7 @@ class Canvas(QWidget):
         self.components = []
         # For now, only conductor components are supported
         self.component_selection = 'Conductor'
+        
         
         # Set the default pen color and width
         self.pen_color = QColor(Qt.black)
@@ -47,8 +50,18 @@ class Canvas(QWidget):
         
         # Initialize the list of nets and the net selection id and other net id
         self.nets = []
-        self.net_selection_id = None
+        self.net_selection_id = 0
         self.other_net_id = None
+        
+        # Initialize the list of branches and the branch selection id and other branch id
+        self.branches = []
+        self.branch_selection_id = 0
+        self.other_branch_id = None
+                
+        # Initialize the list of meshes and the mesh selection id and other mesh id
+        self.meshes = []
+        self.mesh_selection_id = 0
+        self.other_mesh_id = None
         
         # Initialize a variable that stores the draw/select mode
         self.draw_mode = True
@@ -63,8 +76,8 @@ class Canvas(QWidget):
         
         # Flags to indicate if a new net is being created or if the component is connecting 
         # to an existing node
-        self.new_net = True
-        self.end_net = False
+        self.new_node_1 = True
+        self.new_node_2 = True
 
     # Draws the components and nodes on the canvas
     def paintEvent(self, event):
@@ -89,9 +102,9 @@ class Canvas(QWidget):
         
         # Draw the current position of the mouse cursor if not snapped to a node    
         if self.current_pos and not self.nearest_node:
-            
             painter.setPen(QPen(QColor(Qt.red), 5))
             painter.drawEllipse(self.current_pos, 2, 2)
+            
         # Show the nearest node to the mouse cursor if snapped 
         if self.nearest_node:
             painter.setPen(QPen(QColor(Qt.red), 5))
@@ -99,17 +112,23 @@ class Canvas(QWidget):
             
     # Handles mouse press events
     def mousePressEvent(self, event):
+        
         # Left mouse button press
         if event.button() == Qt.LeftButton and self.draw_mode:
+            
             # Find the nearest node to the mouse cursor and snap to it
             self.nearest_node = self.find_nearest_node(event.pos())
+            
             # If a node is snapped to, set the start position to the node position,
             # set the net selection id to the node's net id, 
             # and set new net flag to False
             if self.nearest_node:
-                self.net_selection_id = self.nearest_node.net_id
+                
+                #self.net_selection_id = self.nearest_node.net_id
                 self.start_pos = self.nearest_node.pos
-                self.new_net = False
+                self.new_node_1 = False
+                self.net_selection_id = self.nearest_node.net_id
+                
             # If no node is snapped to, set the start position to the mouse cursor position,
             # set the net selection id to the last net id + 1, 
             # and keep the new net flag as True
@@ -117,8 +136,10 @@ class Canvas(QWidget):
                 self.start_pos = event.pos()
                 self.net_selection_id = get_last_net_id(self.nets) + 1
                 
+                
             # To preview the component being drawn, set the end position to the mouse cursor position
             self.end_pos = event.pos()
+            
             # Update the canvas
             self.update()
             
@@ -127,88 +148,102 @@ class Canvas(QWidget):
 
     # Handles mouse move events
     def mouseMoveEvent(self, event):
+        
         # Update the current position of the mouse cursor
         self.current_pos = event.pos()
+        
         # Find the nearest node to the mouse cursor and snap to it if within the snap distance
         self.nearest_node = self.find_nearest_node(self.current_pos)
         
         # If the left mouse button is pressed, update the end position of the component being drawn
         if event.buttons() == Qt.LeftButton:
+            
             self.end_pos = self.current_pos
             if self.nearest_node:
+                
                 self.end_pos = self.nearest_node.pos
-            
         self.update()
-
+        
     # Handles mouse release events
     def mouseReleaseEvent(self, event):
+        
         # If the left mouse button is released
         if event.button() == Qt.LeftButton:
+            
             # If the end position is snapped to a node, set the end position to the node position
             # and set the end net flag to True if the net selection id is not the same as 
             # the node's net id. If the end position is not snapped to a node, set the end 
             # position to the mouse cursor position.
-            
             self.nearest_node = self.find_nearest_node(self.end_pos)
             self.other_net_id = None
+            
             if self.nearest_node:
+                
                 self.end_pos = self.nearest_node.pos
-                if self.net_selection_id != self.nearest_node.net_id:
-                    self.end_net = True
+                self.new_node_2 = False
+                self.other_net_id = self.nearest_node.net_id
+                
             else:
+                
                 self.end_pos = event.pos()
             
             # Create a new component with an id that is one more than the last component id,
             # the start and end positions, the net selection id, and the other net id if
             # the end position is snapped to a node.
-            
+            nt_id=self.net_selection_id
             comp_id = get_last_component_id(self.components) + 1    
-            component = add_component(self.component_selection, comp_id, self.start_pos, self.end_pos, net_id=self.net_selection_id)
+            # type, id, brch_id, nt_id, nd_ids, st_pos, nd_pos, msh_ids=None
+            component = add_component(self.component_selection, comp_id, self.branch_selection_id, nt_id, st_pos = self.start_pos, nd_pos = self.end_pos, nd_ids = [])
+            new_net = None
             
+            if self.new_node_1 and self.new_node_2:
+
+                net_id = get_last_net_id(self.nets) + 1
+                new_net = add_net(net_id, self.branch_selection_id, cmp_ids = [comp_id], nd_ids=[])
+                self.nets.append(new_net)
+                self.net_selection_id = net_id
+                self.main_window.update_net_list([net.id for net in self.nets])
+                
             # If the start position is not snapped to a node, create a new node with an id that 
             # is one more than the last node id, the start position, and the net selection id.
-            if self.new_net:
+            if self.new_node_1:
+                
                 node_id = get_last_component_id(self.nodes) + 1
-                node = add_node(node_id, self.start_pos, self.net_selection_id)
-                add_component_id(node, comp_id)
+                node = add_node(node_id,self.branch_selection_id, nt_id, cmp_ids = [component.get_id()], pos = self.start_pos)
+                node.add_component_id(comp_id)
                 self.nodes.append(node)
-                add_node_id(component, node_id)
+                component.add_node_id([node_id])
+                new_net.add_node_id(node_id)
                 
             # If the end position is not snapped to a node, create a new node with an id that
             # is one more than the last node id, the end position, and the net selection id.
-            if not self.end_net:
+            if self.new_node_2:
+                
                 node_id = get_last_component_id(self.nodes) + 1
-                node = add_node(node_id, self.end_pos, self.net_selection_id)
-                add_component_id(node, comp_id)
+                node = add_node(node_id, self.branch_selection_id, nt_id, cmp_ids = [component.get_id()], pos = self.end_pos)
+                node.add_component_id(comp_id)
                 self.nodes.append(node)
-                add_node_id(component, node_id)
+                component.add_node_id(node_id)
+                new_net.add_node_id(node_id)
 
             # Add the component to the list of components
             self.components.append(component)
             
-            
-
             # If a new net is being created, create a new net with an id that is one more
             # than the last net id contains the new component id. Add the net to the list 
             # of nets and update the net list in the main window.            
-            if self.new_net:
-                net_id = get_last_net_id(self.nets) + 1
-                net = create_net(net_id, comp_id)
-                self.nets.append(net)
-                self.net_selection_id = net_id
-                self.main_window.update_net_list([net.id for net in self.nets])
+            
                 
             # Add the new component id to the list of component ids in the net
             net_by_id(self.nets, component.net_id).component_ids.append(component.id)
             
             # If the end position is snapped to a node, set the other net id to the node's 
             # net id.     
-            if self.end_net:
-                self.other_net_id = self.nearest_node.net_id
+            if not self.new_node_2:
+                
                 
                 # If the net selection id is not the same as the other net id, merge the
                 # nets.
-                
                 if self.net_selection_id != self.other_net_id:
                     self.merge_nets(self.net_selection_id, self.other_net_id)
 
@@ -219,14 +254,15 @@ class Canvas(QWidget):
             # Reset the start and end positions, the nearest node, and the flags
             self.start_pos = None
             self.end_pos = None
-            self.end_net = False
+            self.new_node_2 = True
             self.nearest_node = None
-            self.new_net = True
+            self.new_node_1 = True
             self.update()
 
     # Merges two nets by removing one of the nets and changing the net id of the
     # components and nodes that belong to the removed net to the other net id.
     def merge_nets(self, net_id_1, net_id_2):
+        
         net1_length = len(net_by_id(self.nets, net_id_1).component_ids)
         net2_length = len(net_by_id(self.nets, net_id_2).component_ids)
         
@@ -255,11 +291,11 @@ class Canvas(QWidget):
         
         for component in self.components:
             if component.net_id == net_to_remove:
-                component.change_net(net_to_keep)
+                component.change_net_id(net_to_keep)
                 
         for node in self.nodes:
             if node.net_id == net_to_remove:
-                node.change_net(net_to_keep)
+                node.change_net_id(net_to_keep)
             
         self.nets.remove(net_by_id(self.nets, net_to_remove))
     

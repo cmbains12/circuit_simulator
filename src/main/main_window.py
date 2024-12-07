@@ -72,22 +72,49 @@ class MainWindow(QMainWindow):
         # Create a list widget to display the list of components
         self.component_list = QListWidget()
         self.component_list.setFixedWidth(300)
+        
+        # Create a list widget to display the list of nodes
+        self.node_list = QListWidget()
+        self.node_list.setFixedWidth(300)
+        
+        # Create a list widget to display the list of branches
+        self.branch_list = QListWidget()
+        self.branch_list.setFixedWidth(300)
 
         # Create a list widget to display the list of nets
         self.net_list = QListWidget()
         self.net_list.setFixedWidth(300)
+        
+        # Create a list widget to display the list of meshes 
+        self.mesh_list = QListWidget()
+        self.mesh_list.setFixedWidth(300)
 
         # Create a dock widget to display the list of components
         dock_widget_1 = QDockWidget("Components", self)
         dock_widget_1.setWidget(self.component_list)
+        
+        # Create a dock widget to display the list of nodes
+        dock_widget_2 = QDockWidget("Nodes", self)
+        dock_widget_2.setWidget(self.node_list)
+        
+        # Create a dock widget to display the list of branches
+        dock_widget_3 = QDockWidget("Branches", self)
+        dock_widget_3.setWidget(self.branch_list)
 
         # Create a dock widget to display the list of nets
-        dock_widget_2 = QDockWidget("Nets", self)
-        dock_widget_2.setWidget(self.net_list)
+        dock_widget_4 = QDockWidget("Nets", self)
+        dock_widget_4.setWidget(self.net_list)
+        
+        # Create a dock widget to display the list of meshes
+        dock_widget_5 = QDockWidget("Meshes", self)
+        dock_widget_5.setWidget(self.mesh_list)
         
         # Add the dock widgets to the right side of the main window
         self.addDockWidget(Qt.RightDockWidgetArea, dock_widget_1)
         self.addDockWidget(Qt.RightDockWidgetArea, dock_widget_2)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock_widget_3)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock_widget_4)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock_widget_5)
 
 
 
@@ -112,8 +139,31 @@ class MainWindow(QMainWindow):
     def update_net_list(self, net_ids):
         # Clear the list widget
         self.net_list.clear()
+        # Add the net ids to the list widget
+        self.net_list.addItems([str(net_id) for net_id in net_ids])
+        
+    # Update the list of meshes in the right dock widget
+    def update_mesh_list(self, mesh_ids):
+        # Clear the list widget
+        self.mesh_list.clear()
+        # Add the mesh ids to the list widget
+        self.mesh_list.addItems([str(mesh_id) for mesh_id in mesh_ids])
+        
+    # Update the list of nodes in the right dock widget
+    def update_node_list(self, node_ids):
+        # Clear the list widget
+        self.node_list.clear()
+        # Add the node ids to the list widget
+        self.node_list.addItems([str(node_id) for node_id in node_ids])
+        
+    # Update the list of branches in the right dock widget
+    def update_branch_list(self, branch_ids):
+        # Clear the list widget
+        self.branch_list.clear()
         # Add the branch ids to the list widget
-        self.net_list.addItems([str(branch_id) for branch_id in net_ids])
+        self.branch_list.addItems([str(branch_id) for branch_id in branch_ids])
+        
+    
 
 
 

@@ -13,64 +13,86 @@
 
 
 class Component:
-    def __init__(self, id, start_pos, end_pos, node_ids=[], net_id=None):
+    def __init__(self, id, brch_id, nt_id, nd_ids, st_pos, nd_pos, msh_ids=[]):
         self.id = id
-        self.start_pos = start_pos
-        self.end_pos = end_pos
+        self.branch_id = brch_id
+        self.start_pos = st_pos
+        self.end_pos = nd_pos
         self.component_type = None
-        self.node_ids = node_ids
-        self.net_id = net_id
+        self.node_ids = nd_ids
+        self.net_id = nt_id
+        self.mesh_ids = msh_ids
+        
+    def get_id(self):
+        return self.id
     
-    # Changes the branch id of the component to the new branch id   
-    def change_net(self, new_net_id):
-        self.net_id = new_net_id
-
-
+    def get_branch_id(self):
+        return self.branch_id
     
-
+    def get_net_id(self):
+        return self.net_id
+    
+    def get_node_ids(self):
+        return self.node_ids
+    
+    def get_start_pos(self):
+        return self.start_pos
+    
+    def get_end_pos(self):
+        return self.end_pos
+    
+    def get_mesh_ids(self):
+        return self.mesh_ids
+    
+    def change_branch_id(self, new_id):
+        self.branch_id = new_id
+        
+    def change_net_id(self, new_id):
+        self.net_id = new_id
+        
+    def change_node_id(self, old_id, new_id):
+        self.node_ids[self.node_ids.index(old_id)] = new_id
+        
+    def change_start_pos(self, new_pos):
+        self.start_pos = new_pos
+        
+    def change_end_pos(self, new_pos):
+        self.end_pos = new_pos
+        
+    def add_mesh_id(self, msh_id):
+        self.mesh_ids.append(msh_id)
+        
+    def remove_mesh_id(self, msh_id):
+        self.mesh_ids.remove(msh_id)
+        
+    def add_node_id(self, nd_id):
+        self.node_ids.append(nd_id)
+        
 class Conductor(Component):
-    def __init__(self, id, start_pos, end_pos, node_ids=[], net_id=None):
-        super().__init__(id, start_pos, end_pos, node_ids, net_id)
+    def __init__(self, id, brch_id, nt_id, nd_ids, st_pos, nd_pos, msh_ids=None):
+        super().__init__(id, brch_id, nt_id, nd_ids, st_pos, nd_pos, msh_ids)
 
 
 class Resistor(Component):
-    def __init__(self, id, start_pos, end_pos, node_ids=[], net_id=None):
-        super().__init__(id, start_pos, end_pos, node_ids, net_id)
+    def __init__(self, id, brch_id, nt_id, nd_ids, st_pos, nd_pos, msh_ids=None):
+        super().__init__(id, brch_id, nt_id, nd_ids, st_pos, nd_pos, msh_ids)
 
     
 class Supply(Component):
-    def __init__(self, id, start_pos, end_pos, node_ids=[], net_id=None):
-        super().__init__(id, start_pos, end_pos, node_ids, net_id)
+    def __init__(self, id, brch_id, nt_id, nd_ids, st_pos, nd_pos, msh_ids=None):
+        super().__init__(id, brch_id, nt_id, nd_ids, st_pos, nd_pos, msh_ids)
 
 # Creates a new component with the given id, start position, end position, node ids, and 
 # net id. The component type is used to determine which subclass of the Component class
 # to create.
-def add_component(component_type, id, start_pos, end_pos, node_ids=[], net_id=None):
+def add_component(type, id, brch_id, nt_id, nd_ids, st_pos, nd_pos, msh_ids=None):
 
-    if component_type == 'Conductor':
-        return Conductor(id, start_pos, end_pos, node_ids, net_id)
-    elif component_type == 'Resistor':
-        return Resistor(id, start_pos, end_pos, node_ids, net_id)
-    elif component_type == 'Supply':
-        return Supply(id, start_pos, end_pos, node_ids, net_id)
-    elif component_type == None:
-        return Component(id, start_pos, end_pos, node_ids, net_id)
+    if type == 'Conductor':
+        return Conductor(id, brch_id, nt_id, nd_ids, st_pos, nd_pos, msh_ids)
+    elif type == 'Resistor':
+        return Resistor(id, brch_id, nt_id, nd_ids, st_pos, nd_pos, msh_ids)
+    elif type == 'Supply':
+        return Supply(id, brch_id, nt_id, nd_ids, st_pos, nd_pos, msh_ids)
+    elif type == None:
+        return Component(id, brch_id, nt_id, nd_ids, st_pos, nd_pos, msh_ids)
 
-def add_node_id(component, node_id):
-    component.node_ids.append(node_id)
-
-def remove_node(component, node_id):
-    component.node_ids.remove(node_id)
-
-def change_start_pos(component, new_pos):
-    component.start_pos = new_pos
-
-def change_end_pos(component, new_pos):
-    component.end_pos = new_pos
-
-    
-def component_by_id(components, component_id):
-    return [component for component in components if component.id == component_id]
-
-def change_id(component, new_id):
-    component.id = new_id
