@@ -17,7 +17,7 @@ from components.component import add_component
 from analysis.net import add_net
 from analysis.mesh import add_mesh
 from analysis.branch import add_branch
-from utils import get_last_component_id, get_last_net_id, net_by_id
+from utils import get_last_component_id, get_last_net_id, net_by_id, get_last_branch_id
 from components.node import add_node
 
 class Canvas(QWidget):
@@ -127,6 +127,7 @@ class Canvas(QWidget):
                 #self.net_selection_id = self.nearest_node.net_id
                 self.start_pos = self.nearest_node.pos
                 self.new_node_1 = False
+                
                 self.net_selection_id = self.nearest_node.net_id
                 
             # If no node is snapped to, set the start position to the mouse cursor position,
@@ -134,7 +135,6 @@ class Canvas(QWidget):
             # and keep the new net flag as True
             else:
                 self.start_pos = event.pos()
-                self.net_selection_id = get_last_net_id(self.nets) + 1
                 
                 
             # To preview the component being drawn, set the end position to the mouse cursor position
@@ -154,6 +154,7 @@ class Canvas(QWidget):
         
         # Find the nearest node to the mouse cursor and snap to it if within the snap distance
         self.nearest_node = self.find_nearest_node(self.current_pos)
+        
         
         # If the left mouse button is pressed, update the end position of the component being drawn
         if event.buttons() == Qt.LeftButton:
@@ -175,8 +176,7 @@ class Canvas(QWidget):
             # the node's net id. If the end position is not snapped to a node, set the end 
             # position to the mouse cursor position.
             self.nearest_node = self.find_nearest_node(self.end_pos)
-            self.other_net_id = None
-            
+            net = None
             if self.nearest_node:
                 
                 self.end_pos = self.nearest_node.pos
@@ -187,44 +187,45 @@ class Canvas(QWidget):
                 
                 self.end_pos = event.pos()
             
-            # Create a new component with an id that is one more than the last component id,
+            if self.new_node_1 and self.new_node_2:
+                self.net_selection_id = get_last_net_id(self.nets) + 1
+                self.branch_selection_id = get_last_branch_id(self.branches) + 1
+                net = add_net(self.net_selection_id, self.branch_selection_id, cmp_ids = [], nd_ids=[])
+                self.nets.append(net)
+                self.main_window.update_net_list([net.id for net in self.nets])
+                # Create a new component with an id that is one more than the last component id,
+            
             # the start and end positions, the net selection id, and the other net id if
             # the end position is snapped to a node.
-            nt_id=self.net_selection_id
             comp_id = get_last_component_id(self.components) + 1    
-            # type, id, brch_id, nt_id, nd_ids, st_pos, nd_pos, msh_ids=None
-            component = add_component(self.component_selection, comp_id, self.branch_selection_id, nt_id, st_pos = self.start_pos, nd_pos = self.end_pos, nd_ids = [])
-            new_net = None
+            component = add_component(self.component_selection, comp_id, self.branch_selection_id, self.net_selection_id, st_pos = self.start_pos, nd_pos = self.end_pos, nd_ids = [])
             
-            if self.new_node_1 and self.new_node_2:
 
-                net_id = get_last_net_id(self.nets) + 1
-                new_net = add_net(net_id, self.branch_selection_id, cmp_ids = [comp_id], nd_ids=[])
-                self.nets.append(new_net)
-                self.net_selection_id = net_id
-                self.main_window.update_net_list([net.id for net in self.nets])
                 
             # If the start position is not snapped to a node, create a new node with an id that 
             # is one more than the last node id, the start position, and the net selection id.
             if self.new_node_1:
                 
                 node_id = get_last_component_id(self.nodes) + 1
-                node = add_node(node_id,self.branch_selection_id, nt_id, cmp_ids = [component.get_id()], pos = self.start_pos)
-                node.add_component_id(comp_id)
+                node = add_node(node_id,self.branch_selection_id, self.net_selection_id, cmp_ids = [comp_id], pos = self.start_pos)
                 self.nodes.append(node)
                 component.add_node_id([node_id])
-                new_net.add_node_id(node_id)
+                net_by_id(self.nets, self.net_selection_id).add_node_id(node_id)
                 
+            
+
+                
+               
             # If the end position is not snapped to a node, create a new node with an id that
             # is one more than the last node id, the end position, and the net selection id.
             if self.new_node_2:
                 
                 node_id = get_last_component_id(self.nodes) + 1
-                node = add_node(node_id, self.branch_selection_id, nt_id, cmp_ids = [component.get_id()], pos = self.end_pos)
+                node = add_node(node_id, self.branch_selection_id, self.net_selection_id, cmp_ids = [comp_id], pos = self.end_pos)
                 node.add_component_id(comp_id)
                 self.nodes.append(node)
                 component.add_node_id(node_id)
-                new_net.add_node_id(node_id)
+                net_by_id(self.nets, self.net_selection_id).add_node_id(node_id)
 
             # Add the component to the list of components
             self.components.append(component)
@@ -235,7 +236,7 @@ class Canvas(QWidget):
             
                 
             # Add the new component id to the list of component ids in the net
-            net_by_id(self.nets, component.net_id).component_ids.append(component.id)
+            net_by_id(self.nets, component.net_id).add_component_id(comp_id)
             
             # If the end position is snapped to a node, set the other net id to the node's 
             # net id.     

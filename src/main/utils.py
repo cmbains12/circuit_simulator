@@ -28,6 +28,12 @@ def get_last_net_id(nets):
         else:
                 return nets[-1].id
         
+def get_last_branch_id(branches):
+    if len(branches) == 0:
+        return 0
+    else:
+        return branches[-1].id
+        
 def net_by_id(nets, id):
     for net in nets:
         if net.id == id:
