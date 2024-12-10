@@ -7,31 +7,42 @@
 
 
 class Node:
-    def __init__(self, id, brch_id, nt_id, cmp_ids, pos, msh_ids=None):
+    def __init__(self, id, brch_ids, nt_id, cmp_ids, pos, msh_ids=None, nt_type=None):
         self.id = id
-        self.branch_id = brch_id
+        self.branch_ids = [brch_ids]
         self.net_id = nt_id
         self.component_ids = [cmp_ids]
         self.pos = pos
         self.mesh_ids = [msh_ids]
+        self.net_type = nt_type
+    
+    def get_net_type(self):
+        type = self.net_type
+        return type
         
     def get_id(self):
-        return self.id
+        id = self.id
+        return id
     
-    def get_branch_id(self):
-        return self.branch_id
+    def get_branch_ids(self):
+        branch_ids = self.branch_ids
+        return branch_ids
     
     def get_net_id(self):
-        return self.net_id
+        net_id = self.net_id
+        return net_id
     
     def get_component_ids(self):
-        return self.component_ids
+        component_ids = self.component_ids
+        return component_ids
     
     def get_position(self):
-        return self.pos
+        pos = self.pos
+        return pos
     
     def get_mesh_ids(self):
-        return self.mesh_ids
+        mesh_ids = self.mesh_ids
+        return mesh_ids
     
     def change_branch_id(self, new_id):
         self.branch_id = new_id
@@ -54,9 +65,12 @@ class Node:
     def remove_mesh_id(self, msh_id):
         self.mesh_ids.remove(msh_id)
         
-def add_node(id, brch_ids, nt_id, cmp_ids, pos, msh_ids=None):
+    def set_net_type(self, nt_type):
+        self.net_type = nt_type
+        
+def add_node(id, brch_ids, nt_id, cmp_ids, pos, msh_ids=None, nt_type=None):
     
-    return Node(id, brch_ids, nt_id, cmp_ids, pos, msh_ids)
+    return Node(id, brch_ids, nt_id, cmp_ids, pos, msh_ids, nt_type)
 
                 
                 

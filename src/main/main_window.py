@@ -60,9 +60,12 @@ class MainWindow(QMainWindow):
         left_bar = QToolBar("Left Bar")
         self.addToolBar(Qt.LeftToolBarArea, left_bar)
 
-        button_names = ["Button 1", "Button 2", "Button 3"]
+        button_names = ["Set Branches", "Button 2", "Button 3"]
         for name in button_names:
             action = QAction(QIcon(), name, self)
+            
+            if name == "Set Branches":
+                action.triggered.connect(self.canvas.set_branches)
             left_bar.addAction(action)
             
     # Add the right dock widget.  A dock widget is a window that can be docked in the main
