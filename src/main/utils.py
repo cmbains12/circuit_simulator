@@ -8,7 +8,8 @@
 
 from PyQt5.QtWidgets import QDesktopWidget
 
-from analysis.branch import add_branch
+from analysis.branch import add_branch  
+from components.component import Component
 
 # Get the display resolution of the screen
 def get_display_resolution(self):
@@ -60,13 +61,7 @@ def node_by_id(nodes, id):
                         return node
         return None
 
-def define_branches(branches, components, nodes):
-        branches = []
-        terminal_components = []
-        internal_components = []
-        
-        
-        
+def define_components_and_nodes(components, nodes):
         for node in nodes:
                 if len(node.component_ids) == 1:
                         node.net_type = 'terminal'
@@ -85,11 +80,22 @@ def define_branches(branches, components, nodes):
                         if net_type == 'junction' or net_type == 'terminal':
                                 component.set_net_type('terminal')
 
+
+def define_branches(branches, components, nodes):
+        branches = []
+        terminal_components = []
+        internal_components = []
+        
+        init_num_components = len(components)
+        
+        
+        
+        for component in components:
                 if component.get_net_type() == 'terminal':
                         terminal_components.append(component)
-                        
                 elif component.get_net_type() == 'internal':
                         internal_components.append(component)
+        
                         
         while terminal_components:
                 component = terminal_components[0]
@@ -123,16 +129,13 @@ def define_branches(branches, components, nodes):
                                                 next_flag = True
                                                 if comp.get_net_type() == 'terminal':
                                                         terminal_components.remove(comp)
+                                                elif comp.get_net_type() == 'internal':
+                                                        internal_components.remove(comp)
                                 
-                                        
-                                                
-                                        
-                                
-                                        
-                branches.append(branch)     
-                
-        return branches   
-                
+                branches.append(branch)
 
-                        
-                        
+        if internal_components:     
+                return branches, internal_components[0]
+        
+        else:
+                return branches, None

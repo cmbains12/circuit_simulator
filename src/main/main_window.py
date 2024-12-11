@@ -11,6 +11,7 @@ from PyQt5.QtCore import Qt
 
 from utils import get_display_resolution
 
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -29,13 +30,19 @@ class MainWindow(QMainWindow):
 
         # Set the window size and position
         self.setGeometry(100, 100, self.window_width, self.window_height)
-
+        
+        self.component_list = None
+        self.node_list = None
+        self.branch_list = None
+        self.net_list = None
+        self.mesh_list = None
+        
 
         # Add the canvas and toolbars
         self.add_canvas()
         self.add_top_bar()
-        self.add_left_bar()
         self.add_right_bar()
+        self.add_left_bar()
         
     # Add the top toolbar
     def add_top_bar(self):
@@ -60,13 +67,25 @@ class MainWindow(QMainWindow):
         left_bar = QToolBar("Left Bar")
         self.addToolBar(Qt.LeftToolBarArea, left_bar)
 
-        button_names = ["Set Branches", "Button 2", "Button 3"]
+        button_names = ["Set Branches", "Clear", "Button 3"]
         for name in button_names:
             action = QAction(QIcon(), name, self)
             
             if name == "Set Branches":
                 action.triggered.connect(self.canvas.set_branches)
             left_bar.addAction(action)
+            
+            if name == "Clear":
+                action.triggered.connect(self.canvas.clear)
+                self.update_comp_list([])
+                self.update_net_list([])
+                self.update_mesh_list([])
+                self.update_node_list([])
+                self.update_branch_list([])
+
+                
+                
+                
             
     # Add the right dock widget.  A dock widget is a window that can be docked in the main
     # window. It can be moved around, resized, and closed. It is typically used to display
@@ -132,35 +151,35 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.canvas)
 
     # Update the list of components in the right dock widget
-    def update_comp_list(self, component_ids):
+    def update_comp_list(self, component_ids = []):
         # Clear the list widget
         self.component_list.clear()
         # Add the component ids to the list widget
         self.component_list.addItems([str(comp_id) for comp_id in component_ids])
 
     # Update the list of nets in the right dock widget
-    def update_net_list(self, net_ids):
+    def update_net_list(self, net_ids = []):
         # Clear the list widget
         self.net_list.clear()
         # Add the net ids to the list widget
         self.net_list.addItems([str(net_id) for net_id in net_ids])
         
     # Update the list of meshes in the right dock widget
-    def update_mesh_list(self, mesh_ids):
+    def update_mesh_list(self, mesh_ids = []):
         # Clear the list widget
         self.mesh_list.clear()
         # Add the mesh ids to the list widget
         self.mesh_list.addItems([str(mesh_id) for mesh_id in mesh_ids])
         
     # Update the list of nodes in the right dock widget
-    def update_node_list(self, node_ids):
+    def update_node_list(self, node_ids = []):
         # Clear the list widget
         self.node_list.clear()
         # Add the node ids to the list widget
         self.node_list.addItems([str(node_id) for node_id in node_ids])
         
     # Update the list of branches in the right dock widget
-    def update_branch_list(self, branch_ids):
+    def update_branch_list(self, branch_ids = []):
         # Clear the list widget
         self.branch_list.clear()
         # Add the branch ids to the list widget

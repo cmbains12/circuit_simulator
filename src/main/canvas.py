@@ -17,7 +17,7 @@ from components.component import add_component, Component
 from analysis.net import add_net
 from analysis.mesh import add_mesh
 from analysis.branch import add_branch
-from utils import get_last_component_id, get_last_net_id, net_by_id, get_last_branch_id, branch_by_id, component_by_id, node_by_id, define_branches
+from utils import get_last_component_id, get_last_net_id, net_by_id, get_last_branch_id, branch_by_id, component_by_id, node_by_id, define_branches, define_components_and_nodes
 from components.node import add_node, Node
 
 class Canvas(QWidget):
@@ -413,7 +413,24 @@ class Canvas(QWidget):
 
     def set_branches(self):
         self.branches = []
-        branch_list = define_branches(self.branches, self.components, self.nodes)
+        
+        define_components_and_nodes(self.components, self.nodes)
+        branch_list, residual = define_branches(self.branches, self.components, self.nodes)
+
+        while residual:
+            comp_fix_1 = residual
+            comp_fix_1.set_net_type('terminal')
+                
+            node_fix = node_by_id(self.nodes, comp_fix_1.get_node_ids()[0])
+            node_fix.set_net_type('junction')
+            node_fix_ids = node_fix.get_component_ids().copy()
+            node_fix_ids.remove(comp_fix_1.get_id())
+            comp_fix_2 = component_by_id(self.components, node_fix_ids[0])
+            comp_fix_2.set_net_type('terminal')
+            
+            branch_list, residual = define_branches(self.branches, self.components, self.nodes)
+        
+        define_components_and_nodes(self.components, self.nodes)
             
         for branch in branch_list:
             nodes = []
@@ -430,7 +447,21 @@ class Canvas(QWidget):
 
             self.branches.append(new_branch)
             self.main_window.update_branch_list([branch.id for branch in self.branches])
+        self.branch_selection_id = 0
 
+    def clear(self):
+        self.components = []
+        self.main_window.update_comp_list()
+        self.nets = []
+        self.main_window.update_net_list()
+        self.branches = []
+        self.main_window.update_branch_list()
+        self.meshes = []
+        self.main_window.update_mesh_list()
+        self.nodes = []
+        self.main_window.update_node_list()
+        self.update()
+        self.branch_selection_id = 0
     
 
 
